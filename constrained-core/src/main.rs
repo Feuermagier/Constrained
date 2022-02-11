@@ -1,6 +1,15 @@
-use constrained_core::{Rect, Point, Constraint, RectPoint, Diagram, solve::{Solver, grad_solver::AdamSolver}};
+use std::ops::Add;
+
+use constrained_core::{
+    solve::{grad_solver::AdamSolver, Solver},
+    Constraint, Diagram, Point, Rect, RectPoint,
+};
+use z3::ast::Ast;
 
 fn main() {
+    z3_test();
+    return;
+
     let diagram = Diagram {
         rects: vec![
             Rect {
@@ -28,12 +37,12 @@ fn main() {
             },
             Constraint::WidthFixed {
                 rect: 0,
-                width: 1f32
+                width: 1f32,
             },
             Constraint::HeightFixed {
                 rect: 0,
-                height: 1f32
-            }
+                height: 1f32,
+            },
         ],
     };
 
@@ -55,4 +64,19 @@ fn render(diagram: &Diagram, path: &str) {
         document = document.add(svg_rect);
     }
     svg::save(path, &document).unwrap();
+}
+
+fn z3_test() {
+    let config = z3::Config::new();
+    let ctx = z3::Context::new(&config);
+
+    let a = z3::ast::Real::new_const(&ctx, "a");
+    let b = z3::ast::Real::new_const(&ctx, "b");
+
+    let solver = z3::Solver::new(&ctx);
+
+    solver.assert(&(&a).add(&b)._eq(&b));
+    solver.assert(&(&b)._eq(&z3::ast::Real::from_real(&ctx, 2, 1)));
+    dbg!(solver.check());
+    dbg!(solver.get_model());
 }

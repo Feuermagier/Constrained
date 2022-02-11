@@ -1,4 +1,5 @@
 pub mod solve;
+pub mod ast;
 
 #[derive(Debug)]
 pub enum Constraint {
