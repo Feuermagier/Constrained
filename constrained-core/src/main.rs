@@ -1,12 +1,21 @@
 use std::ops::Add;
 
 use constrained_core::{
-    solve::{grad_solver::AdamSolver, Solver},
+    solve::{grad_solver::AdamSolver, Solver, z3_solver},
     Constraint, Diagram, Point, Rect, RectPoint,
 };
 use z3::ast::Ast;
+use constrained_core::parser::parse;
 
 fn main() {
+    let file = std::fs::read_to_string("diagram.cst").unwrap();
+    let ast = parse(&file).unwrap();
+    dbg!(&ast);
+
+    let solver = z3_solver::solve(&ast);
+
+    return;
+
     z3_test();
     return;
 

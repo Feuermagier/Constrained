@@ -1,5 +1,8 @@
 pub mod solve;
 pub mod ast;
+pub mod parser;
+pub mod diagram;
+pub mod paint;
 
 #[derive(Debug)]
 pub enum Constraint {

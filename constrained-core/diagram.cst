@@ -1,0 +1,4 @@
+let x = Rect(top_left = origin, width = 2, height = 2)
+let y = Rect(width = 2, height = 2)
+x.bottom_right = y.top_left
+

@@ -8,5 +8,8 @@ edition = "2021"
 [dependencies]
 autograd = { git = "https://github.com/raskr/rust-autograd" }
 svg = "0.10"
-z3 = { git = "https://github.com/prove-rs/z3.rs", features = ["static-link-z3"] }
-fraction = "0.10"
+z3 = { git = "https://github.com/Feuermagier/z3.rs" }
+z3-sys = { git = "https://github.com/Feuermagier/z3.rs" }
+logos = "0.12"
+thiserror = "1.0"
+log = "0.4"

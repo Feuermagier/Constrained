@@ -10,12 +10,32 @@ impl Expression {
         Self(Box::new(ExpressionType::Var(id)))
     }
 
-    pub fn constant(value: f32) -> Self {
-        Self(Box::new(ExpressionType::Constant(value)))
+    pub fn constant(num: i32, den: i32) -> Self {
+        Self(Box::new(ExpressionType::Constant(num, den)))
     }
 
     pub(crate) fn ty(&self) -> &ExpressionType {
         &self.0
+    }
+
+    pub fn negation(expr: Expression) -> Expression {
+        Expression(Box::new(ExpressionType::Negation(expr)))
+    }
+
+    pub fn sum(lhs: Expression, rhs: Expression) -> Expression {
+        Expression(Box::new(ExpressionType::Sum(lhs, rhs)))
+    }
+
+    pub fn difference(lhs: Expression, rhs: Expression) -> Expression {
+        Expression(Box::new(ExpressionType::Difference(lhs, rhs)))
+    }
+
+    pub fn product(lhs: Expression, rhs: Expression) -> Expression {
+        Expression(Box::new(ExpressionType::Product(lhs, rhs)))
+    }
+
+    pub fn fraction(lhs: Expression, rhs: Expression) -> Expression {
+        Expression(Box::new(ExpressionType::Fraction(lhs, rhs)))
     }
 }
 
@@ -67,5 +87,5 @@ pub(crate) enum ExpressionType {
     Difference(Expression,Expression),
     Product(Expression,Expression),
     Fraction(Expression,Expression),
-    Constant(f32),
+    Constant(i32, i32),
 }
