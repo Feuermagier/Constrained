@@ -19,9 +19,11 @@ pub fn parse(file: &str) -> Result<ConstrainedAst, ParserError> {
 }
 
 fn block(lexer: &mut Lexer, ast: &mut ConstrainedAst) -> ParserResult {
+    println!("Block");
     let mut names = HashMap::new();
     loop {
         statement(lexer, ast, &mut names)?;
+        println!("{:?}", lexer.peek());
         if *lexer.peek()? != Token::Newline {
             break;
         }
@@ -31,10 +33,19 @@ fn block(lexer: &mut Lexer, ast: &mut ConstrainedAst) -> ParserResult {
 }
 
 fn statement(lexer: &mut Lexer, ast: &mut ConstrainedAst, names: &mut HashMap<String, VarId>) -> ParserResult {
+    println!("Statement");
     match lexer.peek()? {
+        Token::Hashtag => {
+            // Comment
+            println!("Comment");
+            while *lexer.peek()? != Token::Newline {
+                lexer.next()?;
+            }
+            Ok(())
+        }
         Token::Semicolon => Ok(()),
         Token::Var => {
-            let name = var_statement(lexer)?;
+            let (name, expression) = var_statement(lexer, names)?;
             let id = ast.create_var(name.clone());
             names.insert(name, id);
             Ok(())
@@ -47,17 +58,26 @@ fn statement(lexer: &mut Lexer, ast: &mut ConstrainedAst, names: &mut HashMap<St
     }
 }
 
-fn var_statement(lexer: &mut Lexer) -> Result<String, ParserError> {
+fn var_statement(lexer: &mut Lexer, names: &mut HashMap<String, VarId>) -> Result<(String, Option<Expression>), ParserError> {
+    println!("Var statement");
     lexer.expect(Token::Var)?;
-    Ok(lexer.expect_identifier()?)
+    let name = lexer.expect_identifier()?;
+    let expression = if *lexer.peek()? == Token::Equals {
+        lexer.expect(Token::Equals)?;
+        Some(expression(lexer, names)?)
+    } else {
+        None
+    };
+    Ok((name, expression))
 }
 
 fn constraint_statement(lexer: &mut Lexer, names: &HashMap<String, VarId>) -> Result<Constraint, ParserError> {
+    println!("constraint statement");
     let lhs = expression(lexer, names)?;
     let token = lexer.peek()?;
     match token {
-        Token::ConstraintEquals => {
-            lexer.expect(Token::ConstraintEquals)?;
+        Token::Equals => {
+            lexer.expect(Token::Equals)?;
             let rhs = expression(lexer, names)?;
             Ok(Constraint::Equal(lhs, rhs))
         }
@@ -66,6 +86,7 @@ fn constraint_statement(lexer: &mut Lexer, names: &HashMap<String, VarId>) -> Re
 }
 
 fn expression(lexer: &mut Lexer, names: &HashMap<String, VarId>) -> Result<Expression, ParserError> {
+    println!("Expression");
     let lhs = factor(lexer, names)?;
     if *lexer.peek()? == Token::Plus {
         lexer.expect(Token::Plus)?;

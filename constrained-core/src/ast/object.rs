@@ -22,14 +22,14 @@ pub struct Object {
 }
 
 impl Object {
-    pub fn from_type(ty: Rc<Type>, var_env: VariableEnvironment) -> Self {
-        let attributes = HashMap::with_capacity(ty.attributes.len());
+    pub fn from_type(ty: Rc<Type>, var_env: &mut VariableEnvironment) -> Self {
+        let mut attributes = HashMap::with_capacity(ty.attributes.len());
         for attr in &ty.attributes {
             let value = match attr.ty {
                 PrimitiveType::Number => Primitive::Number(var_env.create_var(attr.name.clone())),
                 PrimitiveType::Vector => Primitive::Vector(
-                    var_env.create_var(attr.name + ".x"),
-                    var_env.create_var(attr.name + ".y"),
+                    var_env.create_var(attr.name.clone() + ".x"),
+                    var_env.create_var(attr.name.clone() + ".y"),
                 ),
             };
             attributes.insert(attr.name.clone(), value);

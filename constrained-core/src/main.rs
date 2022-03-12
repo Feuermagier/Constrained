@@ -1,10 +1,10 @@
 use std::ops::Add;
 
 use constrained_core::{
-    solve::{grad_solver::AdamSolver, Solver, z3_solver},
+    solve::{grad_solver::AdamSolver, Solver},
     Constraint, Diagram, Point, Rect, RectPoint,
 };
-use z3::ast::Ast;
+// use z3::ast::Ast;
 use constrained_core::parser::parse;
 
 fn main() {
@@ -12,11 +12,6 @@ fn main() {
     let ast = parse(&file).unwrap();
     dbg!(&ast);
 
-    let solver = z3_solver::solve(&ast);
-
-    return;
-
-    z3_test();
     return;
 
     let diagram = Diagram {
@@ -75,6 +70,7 @@ fn render(diagram: &Diagram, path: &str) {
     svg::save(path, &document).unwrap();
 }
 
+/*
 fn z3_test() {
     let config = z3::Config::new();
     let ctx = z3::Context::new(&config);
@@ -89,3 +85,4 @@ fn z3_test() {
     dbg!(solver.check());
     dbg!(solver.get_model());
 }
+*/

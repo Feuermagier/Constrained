@@ -1,5 +1,5 @@
 pub mod grad_solver;
-pub mod z3_solver;
+//pub mod z3_solver;
 
 use crate::{SolverStatus, Diagram};
 

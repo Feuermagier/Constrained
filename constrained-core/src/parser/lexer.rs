@@ -8,15 +8,17 @@ pub enum Token {
     RParen,
     Semicolon,
     Var,
-    ConstraintEquals,
     Or,
     Plus,
     Minus,
     Mul,
     Div,
+    Equals,
+    Dot,
     Literal(i32),
     Identifier(String),
     Newline,
+    Hashtag,
     Eof
 }
 
@@ -29,7 +31,7 @@ enum LogosToken {
     Var,
 
     #[token("=")]
-    ConstraintEquals,
+    Equals,
 
     #[token("(")]
     LParen,
@@ -52,14 +54,20 @@ enum LogosToken {
     #[token("/")]
     Div,
 
+    #[token(".")]
+    Dot,
+
     #[regex("[0-9]+", |lex| lex.slice().parse())]
     Literal(i32),
 
     #[regex("[A-z_][A-z0-9_]*", |lex| lex.slice().to_string())]
     Identifier(String),
 
-    #[token("\n")]
+    #[regex(r"\r?\n")]
     Newline,
+
+    #[token("#")]
+    Hashtag,
 
     #[error]
     #[regex(r"[ \t]+", logos::skip)]
@@ -88,7 +96,7 @@ impl<'s> Lexer<'s> {
             match token {
                 LogosToken::Semicolon => Token::Semicolon,
                 LogosToken::Var => Token::Var,
-                LogosToken::ConstraintEquals => Token::ConstraintEquals,
+                LogosToken::Equals => Token::Equals,
                 LogosToken::Or => Token::Or,
                 LogosToken::Plus => Token::Plus,
                 LogosToken::Minus => Token::Minus,
@@ -99,6 +107,8 @@ impl<'s> Lexer<'s> {
                 LogosToken::LParen => Token::LParen,
                 LogosToken::RParen => Token::RParen,
                 LogosToken::Newline => Token::Newline,
+                LogosToken::Hashtag => Token::Hashtag,
+                LogosToken::Dot => Token::Dot,
                 LogosToken::Error => return Err(LexerError::UnexpectedCharacter),
             }
         } else {
