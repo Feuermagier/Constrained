@@ -1,9 +1,8 @@
 from .core import *
 
 
-def inset(inner, outer, padding_x=None, padding_y=None):
-    padding_x, padding_y = num(padding_x), num(padding_y)
-
+@element
+def inset(inner, outer, padding_x=VarPlaceholder(), padding_y=VarPlaceholder()):
     return [
         padding_x >= 0,
         padding_y >= 0,
@@ -18,30 +17,27 @@ def centered_between(element, left, right):
     dist = (right.bounds.left - left.bounds.right)
     return [dist >= 0, element.bounds.center.x == left.bounds.right + dist]
 
-
-def distributed_horizontally(elements: list, spacing=None):
+@element
+def distributed_horizontally(elements: list, spacing=VarPlaceholder()):
     """Distributes the elements on the horizontal axis with the distance given by spacing (spacing >= 0)"""
-    spacing = num(spacing)
     constraints = [spacing >= 0]
     constraints += [elements[i].bounds.right + spacing ==
                     elements[i + 1].bounds.left for i in range(0, len(elements) - 1)]
     return constraints
 
-
-def distributed_vertically(elements: list, spacing=None):
+@element
+def distributed_vertically(elements: list, spacing=VarPlaceholder()):
     """Distributes the elements on the vertical axis with the distance given by spacing (spacing >= 0)"""
-    spacing = num(spacing)
     constraints = [spacing >= 0]
     constraints += [elements[i].bounds.bottom + spacing ==
                     elements[i + 1].bounds.top for i in range(0, len(elements) - 1)]
     return constraints
 
-
-def aligned_horizontally(elements: list, align: str = "center", y=None):
+@element
+def aligned_horizontally(elements: list, align: str = "center", y=VarPlaceholder()):
     """Constrains the y-coordinate of the point of the elements given by align to the value given by y.
     align must be either 'center' (default), 'top' or 'bottom'
     """
-    y = num(y)
     if align == "center":
         return [e.bounds.center.y == y for e in elements]
     elif align == "top":
@@ -51,12 +47,11 @@ def aligned_horizontally(elements: list, align: str = "center", y=None):
     else:
         raise ValueError("align must either be 'center', 'left' or 'right'")
 
-
-def aligned_vertically(elements: list, align: str = "center", x=None):
+@element
+def aligned_vertically(elements: list, align: str = "center", x=VarPlaceholder()):
     """Constrains the x-coordinate of the points of the elements given by align to the value given by y.
     align must be either 'center' (default), 'top' or 'bottom'
     """
-    x = num(x)
     if align == "center":
         return [e.bounds.center.x == x for e in elements]
     elif align == "left":

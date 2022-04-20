@@ -1,7 +1,7 @@
 from PIL import ImageFont
 
 from .core import *
-from .core import _value_of
+from .ast import Or
 
 class Group:
     def __init__(self, objects, constraints):
@@ -10,7 +10,7 @@ class Group:
         for object in objects:
             self.constraints += object.constraints
 
-        self.bounds = Bounds(point(None), num(None), num(None))
+        self.bounds = Bounds()
         for object in objects:
             self.constraints.extend([
                 self.bounds.left <= object.bounds.left,
@@ -19,13 +19,13 @@ class Group:
                 self.bounds.bottom >= object.bounds.bottom
             ])
         self.constraints.append(
-            z3.Or([self.bounds.left == o.bounds.left for o in objects]))
+            Or([self.bounds.left == o.bounds.left for o in objects]))
         self.constraints.append(
-            z3.Or([self.bounds.top == o.bounds.top for o in objects]))
+            Or([self.bounds.top == o.bounds.top for o in objects]))
         self.constraints.append(
-            z3.Or([self.bounds.right == o.bounds.right for o in objects]))
+            Or([self.bounds.right == o.bounds.right for o in objects]))
         self.constraints.append(
-            z3.Or([self.bounds.bottom == o.bounds.bottom for o in objects]))
+            Or([self.bounds.bottom == o.bounds.bottom for o in objects]))
 
     def _draw(self, ctx, model):
         for obj in self.objects:

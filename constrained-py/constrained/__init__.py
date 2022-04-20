@@ -1,2 +1,3 @@
-from .core import Style, num, point
-from .primitive import Canvas, Group, Rect, Text, Circle, Arrow
+from .ast import Var, VarPlaceholder, Point, PointPlaceholder
+from .core import element, Canvas
+from .primitive import Group, Rect, Text, Circle, Arrow

@@ -1,10 +1,12 @@
+from .ast import Var, VarPlaceholder, Point, PointPlaceholder
+
+from functools import wraps
 from PIL import Image, ImageDraw
-import z3
 
 global var_counter
 var_counter = 0
 
-
+"""
 def num(value):
     global var_counter
 
@@ -14,7 +16,6 @@ def num(value):
     elif isinstance(value, float) or isinstance(value, int):
         value = z3.RealVal(value)
     return value
-
 
 def _value_of(value, model):
     if isinstance(value, float) or isinstance(value, int):
@@ -27,38 +28,31 @@ def _value_of(value, model):
         return _value_of(model.evaluate(value), model)
     else:
         raise ValueError(f"{value} (type {type(value)} could not be evaluated")
-
-
-class Point:
-    def __init__(self, x=None, y=None):
-        self.x, self.y = num(x), num(y)
-
-    def __sub__(self, other):
-        return Point(self.x - other.x, self.y - other.y)
-
-    def __add__(self, other):
-        return Point(self.x + other.x, self.y + other.y)
-
-    def __eq__(self, other):
-        return [self.x == other.x, self.y == other.y]
-
-    def _value(self, model):
-        return _value_of(self.x, model), _value_of(self.y, model)
-
-
-def point(value) -> Point:
-    if isinstance(value, Point):
-        return value
-    elif value is None:
-        return Point(None, None)
-    else:
-        x, y = value
-        return Point(x, y)
-
+"""
+def element(func):
+    @wraps(func)
+    def element_wrapper(*args, **kwargs):
+        original_defaults = func.__defaults__
+        if func.__defaults__ is not None:
+            defaults = []
+            for default in func.__defaults__:
+                if isinstance(default, VarPlaceholder):
+                    defaults.append(default.var())
+                elif isinstance(default, PointPlaceholder):
+                    defaults.append(default.point())
+                else:
+                    defaults.append(default)
+            func.__defaults__ = tuple(defaults)
+        #args = [arg + 1 if isinstance(arg, Real) else arg for arg in args]
+        #kwargs = dict([(name, val + 1) if isinstance(val, Real) else (name, val) for (name, val) in kwargs.items()])
+        return_value = func(*args, **kwargs)
+        func.__defaults__ = original_defaults
+        return return_value
+    return element_wrapper
 
 class LineSegment:
-    def __init__(self, start=None, end=None):
-        self.start, self.end = point(start), point(end)
+    def __init__(self, start=PointPlaceholder(), end=PointPlaceholder()):
+        self.start, self.end = start.point(), end.point()
 
     def at(self, t: float):
         return self.start + Point(t * (self.end.x - self.start.x), t * (self.end.y - self.start.y))
@@ -66,10 +60,9 @@ class LineSegment:
     def __eq__(self, other):
         return (self.start == other.start) + (self.end == other.end)
 
-
 class Bounds:
-    def __init__(self, top_left, width, height):
-        self.top_left, self.width, self.height = top_left, width, height
+    def __init__(self, top_left=PointPlaceholder(), width=VarPlaceholder(), height=VarPlaceholder()):
+        self.top_left, self.width, self.height = top_left.point(), width.var(), height.var()
 
     @property
     def top_right(self) -> Point:
@@ -132,6 +125,7 @@ class Canvas:
         self.width, self.height = width, height
         self.root = root
 
+    """
     def show(self):
         solver = z3.Solver()
         if False in self.root.constraints:
@@ -154,3 +148,4 @@ class Canvas:
         self.root._draw(ctx, model)
 
         return img
+    """
