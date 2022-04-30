@@ -3,8 +3,12 @@ from PIL import ImageFont
 from .core import *
 from .ast import Min, Max, Var, VarPlaceholder, Point, PointPlaceholder, point, var
 
+class Primitive(ABC):
+    @abstractmethod
+    def _draw(self, solution: Solution, renderer: Renderer):
+        pass
 
-class Group:
+class Group(Primitive):
     def __init__(self, objects, constraints):
         self.objects = objects
         self.constraints = _flatten_constraints(constraints)
@@ -21,14 +25,9 @@ class Group:
         self.constraints.append(
             Max(self.bounds.bottom, [o.bounds.bottom for o in objects]))
 
-    def _draw(self, ctx, model):
+    def _draw(self, solution, renderer):
         for obj in self.objects:
-            obj._draw(ctx, model)
-
-    def _svg(self, ctx, model):
-        for obj in self.objects:
-            obj._svg(ctx, model)
-
+            obj._draw(solution, renderer)
 
 def _flatten_constraints(constraints):
     result = []
@@ -41,9 +40,9 @@ def _flatten_constraints(constraints):
             result.append(c)
     return result
 
-
-class Rect:
+class Rect(Primitive):
     def __init__(self, top_left = PointPlaceholder(), width = VarPlaceholder(), height = VarPlaceholder(), **kwargs):
+        super().__init__()
         self.top_left = point(top_left)
         self.width = var(width)
         self.height = var(height)
@@ -52,25 +51,16 @@ class Rect:
         self.bounds = Bounds(self.top_left, self.width, self.height)
         self.constraints = [self.width > 0, self.height > 0]
 
-    def _draw(self, ctx, model):
-        x0, y0 = self.top_left._value(model)
-
-        width = _value_of(self.width, model)
-        height = _value_of(self.height, model)
-
-        ctx.rectangle([(x0, y0), (x0 + width, y0 + height)],
-                      outline=self.style.outline, fill=self.style.fill)
-
-    def _svg(self, ctx, model):
-        x0, y0 = self.top_left._value(model)
-
-        width = _value_of(self.width, model)
-        height = _value_of(self.height, model)
-        ctx.add(ctx.rectangle(insert=(x0, y0), size=(width, height)))
+    def _draw(self, solution, renderer):
+        x0, y0 = solution[self.top_left]
+        width = solution[self.width]
+        height = solution[self.height]
+        renderer.rectangle(x0, y0, width, height)
 
 
-class Circle:
+class Circle(Primitive):
     def __init__(self, center=PointPlaceholder(), radius=VarPlaceholder(), **kwargs):
+        super().__init__()
         self.center = point(center)
         self.radius = var(radius)
         self.bounds = Bounds(
@@ -78,21 +68,15 @@ class Circle:
         self.constraints = [self.radius > 0]
         self.style = kwargs.get("style", Style())
 
-    def _draw(self, ctx, model):
-        cx, cy = self.center._value(model)
-        radius = _value_of(self.radius, model)
-
-        ctx.ellipse([(cx - radius, cy - radius),
-                    (cx + radius, cy + radius)], outline=self.style.outline, fill=self.style.fill)
-
-    def _svg(self, ctx, model):
-        cx, cy = self.center._value(model)
-        radius = _value_of(self.radius, model)
-        ctx.circle(center=(cx, cy), r=radius)
+    def _draw(self, solution, renderer):
+        cx, cy = solution[self.center]
+        radius = solution[self.radius]
+        renderer.circle(cx, cy, radius)
 
 
-class Arrow:
+class Arrow(Primitive):
     def __init__(self, **kwargs):
+        super().__init__()
         self.start = point(kwargs.get("start", None))
         self.end = point(kwargs.get("end", None))
         self.bounds = Bounds(self.start, self.end.x -
@@ -100,16 +84,11 @@ class Arrow:
         self.constraints = []
         self.style = kwargs.get("style", Style())
 
-    def _draw(self, ctx, model):
-        x0, y0 = self.start._value(model)
-        x1, y1 = self.end._value(model)
+    def _draw(self, solution, renderer):
+        x0, y0 = solution[self.start]
+        x1, y1 = solution[self.end]
 
-        ctx.line([(x0, y0), (x1, y1)], fill=self.style.fill)
-
-    def _svg(self, ctx, model):
-        x0, y0 = self.start._value(model)
-        x1, y1 = self.end._value(model)
-        ctx.polyline([(x0, y0), (x1, y1)])
+        renderer.line(x0, y0, x1, y1)
 
 
 class Text:

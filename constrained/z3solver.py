@@ -1,48 +1,96 @@
 from numbers import Real
 from typing import Union
+
+from constrained.core import Solution, SolverError
 from .ast import Value, Var, Negation, Sum, Difference, Product, Quotient, Constraint, Equal, Unequal, LessThan, LessThanEqual, GreaterThan, GreaterThanEqual, Min, Max
 import z3
 
-def to_z3(value: Union[Constraint, Value, Real]):
-    if isinstance(value, bool):
-        return value
-    elif isinstance(value, Real):
+def _value_to_z3(value: Union[Value, Real]):
+    if isinstance(value, Real):
         return z3.RealVal(value)
-    elif isinstance(value, Var):
-        return z3.Real(value.name)
-    elif isinstance(value, Negation):
-        return -to_z3(value.value)
-    elif isinstance(value, Sum):
-        return to_z3(value.lhs) + to_z3(value.rhs)
-    elif isinstance(value, Difference):
-        return to_z3(value.lhs) - to_z3(value.rhs)
-    elif isinstance(value, Product):
-        return to_z3(value.lhs) * to_z3(value.rhs)
-    elif isinstance(value, Quotient):
-        return to_z3(value.lhs) / to_z3(value.rhs)
+    elif isinstance(value, Value):
+        if hasattr(value, "_z3_var"):
+            return value._z3_var
+        if isinstance(value, Var):
+            var = z3.Real(value.id)
+        elif isinstance(value, Negation):
+            var = -_value_to_z3(value.value)
+        elif isinstance(value, Sum):
+            var = _value_to_z3(value.lhs) + _value_to_z3(value.rhs)
+        elif isinstance(value, Difference):
+            var = _value_to_z3(value.lhs) - _value_to_z3(value.rhs)
+        elif isinstance(value, Product):
+            var = _value_to_z3(value.lhs) * _value_to_z3(value.rhs)
+        elif isinstance(value, Quotient):
+            var = _value_to_z3(value.lhs) / _value_to_z3(value.rhs)
+        else:
+            raise TypeError(f"Unknown type {type(value)} for a value")
+
+        value._z3_var = var
+        return var
+    else:
+        raise TypeError(f"Unknown type {type(value)} for a value")
+
+def _constraint_to_z3(value: Union[Constraint, Value, Real]):
+    if isinstance(value, bool):
+        return [value]
     elif isinstance(value, Equal):
-        return to_z3(value.lhs) == to_z3(value.rhs)
+        return [_value_to_z3(value.lhs) == _value_to_z3(value.rhs)]
     elif isinstance(value, Unequal):
-        return to_z3(value.lhs) != to_z3(value.rhs)
+        return [_value_to_z3(value.lhs) != _value_to_z3(value.rhs)]
     elif isinstance(value, LessThan):
-        return to_z3(value.lhs) < to_z3(value.rhs)
+        return [_value_to_z3(value.lhs) < _value_to_z3(value.rhs)]
     elif isinstance(value, GreaterThan):
-        return to_z3(value.lhs) > to_z3(value.rhs)
+        return [_value_to_z3(value.lhs) > _value_to_z3(value.rhs)]
     elif isinstance(value, LessThanEqual):
-        return to_z3(value.lhs) <= to_z3(value.rhs)
+        return [_value_to_z3(value.lhs) <= _value_to_z3(value.rhs)]
     elif isinstance(value, GreaterThanEqual):
-        return to_z3(value.lhs) >= to_z3(value.rhs)
+        return [_value_to_z3(value.lhs) >= _value_to_z3(value.rhs)]
     elif isinstance(value, Min):
-        lhs = to_z3(value.lhs)
-        rhss = [to_z3(rhs) for rhs in value.values]
+        lhs = _value_to_z3(value.lhs)
+        rhss = [_value_to_z3(rhs) for rhs in value.values]
         constraints = [lhs <= rhs for rhs in rhss]
         constraints.append(z3.Or([lhs == rhs for rhs in rhss]))
         return constraints
     elif isinstance(value, Max):
-        lhs = to_z3(value.lhs)
-        rhss = [to_z3(rhs) for rhs in value.values]
+        lhs = _value_to_z3(value.lhs)
+        rhss = [_value_to_z3(rhs) for rhs in value.values]
         constraints = [lhs >= rhs for rhs in rhss]
         constraints.append(z3.Or([lhs == rhs for rhs in rhss]))
         return constraints
     else:
-        raise TypeError(f"Unknown type {type(value)}")
+        raise TypeError(f"Unknown type {type(value)} for a constraint")
+
+def solve_with_z3(canvas):
+    solver = z3.Solver()
+    constraints = []
+    for c in canvas.root.constraints:
+        if c is not True:
+            constraints.extend(_constraint_to_z3(c))
+            
+    solver.add(constraints)
+
+    if solver.check() != z3.sat:
+        raise SolverError(f"Z3 wasn't able to solve the canvas. Reason: {solver.check()}. Check your constraints and try again.")
+
+    print(f"Solved {len(canvas.root.constraints)} constraints in {solver.statistics().time}s")
+
+    model = solver.model()
+    return Z3Solution(model)
+
+class Z3Solution(Solution):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+    def value_of(self, var):
+        return _value_of_z3(_value_to_z3(var), self.model)
+        
+
+def _value_of_z3(value, model):
+    if isinstance(value, z3.RatNumRef):
+        return float(value.numerator_as_long()) / float(value.denominator_as_long())
+    elif isinstance(value, z3.AlgebraicNumRef):
+        return value.approx(20)
+    elif isinstance(value, z3.ArithRef):
+        return _value_of_z3(model.evaluate(value), model)

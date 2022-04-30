@@ -87,14 +87,19 @@ class Var(Value):
     _var_counter = 0
 
     def __init__(self, name=None):
+        self.id = Var._var_counter
+        Var._var_counter += 1
         if name is None:
-            self.name = "$" + str(Var._var_counter)
-            Var._var_counter += 1
+            self.name = "$" + str(self.id)
         else:
             self.name = name
 
     def __str__(self):
         return str(self.name)
+
+    def __eq__(self, other):
+        if not isinstance(other, Var):
+            raise TypeError(f"Cannot compare a Var and a {type(other)}")
 
 
 class VarPlaceholder(Value):
@@ -222,7 +227,7 @@ class GreaterThanEqual(BinaryPrimitiveConstraint):
 
 
 class FunctionConstraint(Constraint):
-    def __init__(self, lhs: 'Value', values: list['Value'], name: str):
+    def __init__(self, lhs: 'Value', values: 'list[Value]', name: str):
         super().__init__()
         self.lhs = _check_and_replace_value(lhs)
         self.values = [_check_and_replace_value(value) for value in values]
@@ -233,12 +238,12 @@ class FunctionConstraint(Constraint):
 
 
 class Min(FunctionConstraint):
-    def __init__(self, lhs: 'Value', values: list['Value']):
+    def __init__(self, lhs: 'Value', values: 'list[Value]'):
         super().__init__(lhs, values, "min")
 
 
 class Max(FunctionConstraint):
-    def __init__(self, lhs: 'Value', values: list['Value']):
+    def __init__(self, lhs: 'Value', values: 'list[Value]'):
         super().__init__(lhs, values, "max")
 
 ############################# Point #############################
@@ -265,6 +270,9 @@ class Point:
 
     def __eq__(self, other):
         return [self.x == other.x, self.y == other.y]
+
+    def _value(self, solution):
+        return solution[self.x], solution[self.y]
 
 
 class PointPlaceholder:
