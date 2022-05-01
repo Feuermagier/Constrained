@@ -1,9 +1,7 @@
 from abc import ABC, abstractmethod
 from numbers import Real
 
-from constrained.svg import SVGRenderer
 from .ast import Value, Var, VarPlaceholder, Point, PointPlaceholder, var, point
-from .z3solver import solve_with_z3
 
 from functools import wraps
 from PIL import Image, ImageDraw
@@ -34,12 +32,6 @@ def _value_of(value, model):
     else:
         raise ValueError(f"{value} (type {type(value)} could not be evaluated")
 """
-
-def solve(canvas, solver="Z3", renderer="SVG"):
-    solution = solve_with_z3(canvas)
-    renderer = SVGRenderer(canvas)
-    canvas.root._draw(solution, renderer)
-    return renderer
 
 def element(func):
     @wraps(func)
@@ -185,13 +177,13 @@ class Solution(ABC):
 
 class Renderer(ABC):
     @abstractmethod
-    def line(self, start_x, start_y, end_x, end_y):
+    def line(self, start_x, start_y, end_x, end_y, style):
         pass
 
     @abstractmethod
-    def rectangle(self, tl_x, tl_y, width, height):
+    def rectangle(self, tl_x, tl_y, width, height, style):
         pass
 
     @abstractmethod
-    def circle(self, center_x, center_y, radius):
+    def circle(self, center_x, center_y, radius, style):
         pass

@@ -1,5 +1,5 @@
 
-from abc import ABC
+from abc import ABC, abstractmethod
 from typing import List, Union
 import numbers
 
@@ -82,6 +82,10 @@ class Value(ABC):
     def __repr__(self):
         return str(self)
 
+    @abstractmethod
+    def __str__(self):
+        pass
+
 
 class Var(Value):
     _var_counter = 0
@@ -100,11 +104,15 @@ class Var(Value):
     def __eq__(self, other):
         if not isinstance(other, Var):
             raise TypeError(f"Cannot compare a Var and a {type(other)}")
+        return Equal(self, other)
 
 
 class VarPlaceholder(Value):
     def __init__(self):
         super().__init__()
+
+    def __str__(Self):
+        return "<VarPlaceholder>"
 
 class Negation(Value):
     def __init__(self, value: Value):

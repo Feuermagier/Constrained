@@ -55,7 +55,7 @@ class Rect(Primitive):
         x0, y0 = solution[self.top_left]
         width = solution[self.width]
         height = solution[self.height]
-        renderer.rectangle(x0, y0, width, height)
+        renderer.rectangle(x0, y0, width, height, self.style)
 
 
 class Circle(Primitive):
@@ -71,7 +71,7 @@ class Circle(Primitive):
     def _draw(self, solution, renderer):
         cx, cy = solution[self.center]
         radius = solution[self.radius]
-        renderer.circle(cx, cy, radius)
+        renderer.circle(cx, cy, radius, self.style)
 
 
 class Arrow(Primitive):
@@ -88,7 +88,7 @@ class Arrow(Primitive):
         x0, y0 = solution[self.start]
         x1, y1 = solution[self.end]
 
-        renderer.line(x0, y0, x1, y1)
+        renderer.line(x0, y0, x1, y1, self.style)
 
 
 class Text:
