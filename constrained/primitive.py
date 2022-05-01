@@ -75,10 +75,10 @@ class Circle(Primitive):
 
 
 class Arrow(Primitive):
-    def __init__(self, **kwargs):
+    def __init__(self, start=PointPlaceholder(), end=PointPlaceholder(), **kwargs):
         super().__init__()
-        self.start = point(kwargs.get("start", None))
-        self.end = point(kwargs.get("end", None))
+        self.start = point(start)
+        self.end = point(end)
         self.bounds = Bounds(self.start, self.end.x -
                              self.start.x, self.end.y - self.end.y)
         self.constraints = []
@@ -92,25 +92,38 @@ class Arrow(Primitive):
 
 
 class Text:
-    def __init__(self, text: str, **kwargs):
-        self.top_left = point(kwargs.get("top_left", None))
+    def __init__(self, text: str, top_left=PointPlaceholder(), width=VarPlaceholder(), height=VarPlaceholder(), **kwargs):
+        self.top_left = point(top_left)
+        self.width, self.height = var(width), var(height)
         self.style = kwargs.get("style", Style())
         self.text = text
-        width, height = _load_font(
-            self.style.font, self.style.font_size).getsize_multiline(text)
-        self.bounds = Bounds(self.top_left, width, height)
+        self.bounds = Bounds(self.top_left, self.width, self.height)
         self.constraints = []
 
-    def _draw(self, ctx, model):
-        x0, y0 = self.top_left._value(model)
-        ctx.text((x0, y0), self.text, fill=self.style.fill,
-                 font=_load_font(self.style.font, self.style.font_size))
+        if kwargs.get("fit", True):
+            measured_width, measured_height = _measure_text(text, self.style.font, self.style.bold, self.style.italic, self.style.fontsize)
+            self.constraints.append(self.width == measured_width)
+            self.constraints.append(self.height == measured_height)
 
-    def _svg(self, ctx, model):
-        x0, y0 = self.top_left._value(model)
-        ctx.text(self.text, insert=(x0, y0))
+    def _draw(self, solution, renderer):
+        x0, y0 = solution[self.top_left]
+        renderer.text(x0, y0, self.text, self.style)
 
 
+# See https://blog.mathieu-leplatre.info/text-extents-with-python-cairo.html
+def _measure_text(text: str, font: str, bold: bool, italic: bool, size: int):
+    try:
+        import cairo
+    except Exception:
+        raise Exception("PyCairo is required to measure the size of text.")
+    surface = cairo.SVGSurface(None, 1280, 200)
+    ctx = cairo.Context(surface)
+    ctx.select_font_face(font, cairo.FONT_SLANT_ITALIC if italic else cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD if bold else cairo.FONT_WEIGHT_NORMAL)
+    ctx.set_font_size(size)
+    xbearing, ybearing, width, height, xadvance, yadvance = ctx.text_extents(text)
+    return width, height
+
+"""
 def _load_font(font: str, font_size: int):
     if font is None:
         font = ImageFont.truetype(
@@ -118,3 +131,4 @@ def _load_font(font: str, font_size: int):
     else:
         font = ImageFont.truetype(font, font_size)
     return font
+"""

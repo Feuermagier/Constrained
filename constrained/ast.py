@@ -102,8 +102,6 @@ class Var(Value):
         return str(self.name)
 
     def __eq__(self, other):
-        if not isinstance(other, Var):
-            raise TypeError(f"Cannot compare a Var and a {type(other)}")
         return Equal(self, other)
 
 

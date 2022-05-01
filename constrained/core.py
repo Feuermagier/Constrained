@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
+from io import BytesIO
 from numbers import Real
 
 from .ast import Value, Var, VarPlaceholder, Point, PointPlaceholder, var, point
 
 from functools import wraps
-from PIL import Image, ImageDraw
 
 global var_counter
 var_counter = 0
@@ -123,16 +123,20 @@ class Style:
     def __init__(self, **kwargs):
         self.fill = kwargs.get("fill", None)
         if self.fill is None:
+            self.fill = "#ffffff"
             self.fill_opacity = 0
         else:
             self.fill_opacity = kwargs.get("fill-opacity", 1)
         self.outline = kwargs.get("outline", "black")
         if self.outline is None:
+            self.outline = "#ffffff"
             self.outline_opacity = 0
         else:
             self.outline_opacity = kwargs.get("outline-opacity", 1)
-        self.font = kwargs.get("font", None)
-        self.font_size = kwargs.get("font_size", 13)
+        self.font = kwargs.get("font", "sans-serif")
+        self.fontsize = kwargs.get("fontsize", 14)
+        self.bold = kwargs.get("bold", False)
+        self.italic = kwargs.get("italic", False)
 
 
 class Canvas:
@@ -194,4 +198,8 @@ class Renderer(ABC):
 
     @abstractmethod
     def circle(self, center_x, center_y, radius, style):
+        pass
+
+    @abstractmethod
+    def text(self, tl_x, tl_y, text, style):
         pass
