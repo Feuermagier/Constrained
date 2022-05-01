@@ -122,7 +122,15 @@ class Bounds:
 class Style:
     def __init__(self, **kwargs):
         self.fill = kwargs.get("fill", None)
-        self.outline = kwargs.get("outline", (0, 0, 0))
+        if self.fill is None:
+            self.fill_opacity = 0
+        else:
+            self.fill_opacity = kwargs.get("fill-opacity", 1)
+        self.outline = kwargs.get("outline", "black")
+        if self.outline is None:
+            self.outline_opacity = 0
+        else:
+            self.outline_opacity = kwargs.get("outline-opacity", 1)
         self.font = kwargs.get("font", None)
         self.font_size = kwargs.get("font_size", 13)
 
