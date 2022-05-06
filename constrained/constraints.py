@@ -13,6 +13,7 @@ def inset(inner, outer, padding_x=VarPlaceholder(), padding_y=VarPlaceholder()):
     ]
 
 
+@element
 def centered_between(element, left, right):
     dist = (right.bounds.left - left.bounds.right)
     return [dist >= 0, element.bounds.center.x == left.bounds.right + dist]
@@ -45,12 +46,12 @@ def aligned_horizontally(elements: list, align: str = "center", y=VarPlaceholder
     elif align == "bottom":
         return [e.bounds.bottom == y for e in elements]
     else:
-        raise ValueError("align must either be 'center', 'left' or 'right'")
+        raise ValueError("align must either be 'center', 'top' or 'bottom'")
 
 @element
 def aligned_vertically(elements: list, align: str = "center", x=VarPlaceholder()):
     """Constrains the x-coordinate of the points of the elements given by align to the value given by y.
-    align must be either 'center' (default), 'top' or 'bottom'
+    align must be either 'center' (default), 'left' or 'right'
     """
     if align == "center":
         return [e.bounds.center.x == x for e in elements]

@@ -9,25 +9,35 @@ class Primitive(ABC):
         pass
 
 class Group(Primitive):
-    def __init__(self, objects, constraints):
+    def __init__(self, objects, constraints, padding_left=0, padding_right=0, padding_top=0, padding_bottom=0, draw_box=False):
         self.objects = objects
+        self.draw_box = draw_box
+        self.padding_left = var(padding_left)
+        self.padding_right = var(padding_right)
+        self.padding_top = var(padding_top)
+        self.padding_bottom = var(padding_bottom)
+
         self.constraints = _flatten_constraints(constraints)
         for object in objects:
             self.constraints += object.constraints
 
         self.bounds = Bounds()
         self.constraints.append(
-            Min(self.bounds.left, [o.bounds.left for o in objects]))
+            Min(self.bounds.left + self.padding_left, [o.bounds.left for o in objects]))
         self.constraints.append(
-            Min(self.bounds.top, [o.bounds.top for o in objects]))
+            Min(self.bounds.top + self.padding_top, [o.bounds.top for o in objects]))
         self.constraints.append(
-            Max(self.bounds.right, [o.bounds.right for o in objects]))
+            Max(self.bounds.right - self.padding_right, [o.bounds.right for o in objects]))
         self.constraints.append(
-            Max(self.bounds.bottom, [o.bounds.bottom for o in objects]))
+            Max(self.bounds.bottom - self.padding_bottom, [o.bounds.bottom for o in objects]))
 
     def _draw(self, solution, renderer):
         for obj in self.objects:
             obj._draw(solution, renderer)
+        if self.draw_box:
+            x0, y0 = solution[self.bounds.top_left]
+            width, height = solution[self.bounds.width], solution[self.bounds.height]
+            renderer.rectangle(x0, y0, width, height, Style(fill=None, outline="red"))
 
 def _flatten_constraints(constraints):
     result = []
