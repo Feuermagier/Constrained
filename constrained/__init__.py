@@ -1,5 +1,5 @@
 from .ast import Var, VarPlaceholder, Point, PointPlaceholder
-from .core import element, Canvas
+from .core import element, Canvas, Style
 from .primitive import Group, Rect, Text, Circle, Arrow
 from .z3solver import solve_with_z3
 from .svg import SVGRenderer

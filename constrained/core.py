@@ -57,7 +57,7 @@ def element(func):
 
 class LineSegment:
     def __init__(self, start=PointPlaceholder(), end=PointPlaceholder()):
-        self.start, self.end = start.point(), end.point()
+        self.start, self.end = point(start), point(end)
 
     def at(self, t: float):
         return self.start + Point(t * (self.end.x - self.start.x), t * (self.end.y - self.start.y))
