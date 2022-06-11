@@ -2,8 +2,37 @@ from numbers import Real
 from typing import Union
 
 from constrained.core import Solution, SolverError
-from .ast import Value, Var, Negation, Sum, Difference, Product, Quotient, Constraint, Equal, Unequal, LessThan, LessThanEqual, GreaterThan, GreaterThanEqual, Min, Max
+from .ast import ConstraintVisitor, Value, ValueVisitor, Var, Negation, Sum, Difference, Product, Quotient, Constraint, Equal, LessThan, LessThanEqual, GreaterThan, GreaterThanEqual, Min, Max
 import z3
+
+class Z3ValueVisitor(ValueVisitor):
+    def visit_real(self, value: Real):
+        return z3.RealVal(value)
+
+    def visit_var(self, value: Var):
+        if hasattr(value, "_z3_var"):
+            return value._z3_var
+        else:
+            return z3.Real(value.id)
+    
+    def visit_negation(self, value: Negation):
+        return -self.dispatch(value.value)
+
+    def visit_sum(self, value: Sum):
+        return self.dispatch(value.lhs) + self.dispatch(value.rhs)
+
+    def visit_difference(self, value: Difference):
+        return self.dispatch(value.lhs) - self.dispatch(value.rhs)
+
+    def visit_product(self, value: Product):
+        return self.dispatch(value.lhs) * self.dispatch(value.rhs)
+
+    def visit_quotient(self, value: Quotient):
+        return self.dispatch(value.lhs) / self.dispatch(value.rhs)
+
+class Z3ConstraintVisitor(ConstraintVisitor):
+    def visit_equal(self, constraint: Equal):
+        return 
 
 def _value_to_z3(value: Union[Value, Real]):
     if isinstance(value, Real):
@@ -36,8 +65,6 @@ def _constraint_to_z3(value: Union[Constraint, Value, Real]):
         return [value]
     elif isinstance(value, Equal):
         return [_value_to_z3(value.lhs) == _value_to_z3(value.rhs)]
-    elif isinstance(value, Unequal):
-        return [_value_to_z3(value.lhs) != _value_to_z3(value.rhs)]
     elif isinstance(value, LessThan):
         return [_value_to_z3(value.lhs) < _value_to_z3(value.rhs)]
     elif isinstance(value, GreaterThan):

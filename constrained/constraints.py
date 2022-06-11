@@ -1,5 +1,15 @@
 from .core import *
 
+@element
+def pad(inner, outer, padding_x=VarPlaceholder(), padding_y=VarPlaceholder()):
+    return [
+        padding_x >= 0,
+        padding_y >= 0,
+        inner.bounds.left >= outer.bounds.left + padding_x,
+        inner.bounds.right <= outer.bounds.right - padding_x,
+        inner.bounds.top >= outer.bounds.top + padding_y,
+        inner.bounds.bottom <= outer.bounds.bottom - padding_y
+    ]
 
 @element
 def inset(inner, outer, padding_x=VarPlaceholder(), padding_y=VarPlaceholder()):

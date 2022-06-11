@@ -1,5 +1,6 @@
 
 from abc import ABC, abstractmethod
+from difflib import Differ
 from typing import List, Union
 import numbers
 
@@ -34,6 +35,10 @@ def var(x):
         raise TypeError(f"{type(x)} cannot be converted to Var")
 
 class Value(ABC):
+    @abstractmethod
+    def accept(self, visitor: 'ValueVisitor'):
+        pass
+
     def __neg__(self):
         return Negation(self)
 
@@ -63,9 +68,6 @@ class Value(ABC):
 
     def __eq__(self, other):
         return Equal(self, other)
-
-    def __ne__(self, other):
-        return Unequal(self, other)
 
     def __lt__(self, other):
         return LessThan(self, other)
@@ -98,6 +100,9 @@ class Var(Value):
         else:
             self.name = name
 
+    def accept(self, visitor: 'ValueVisitor'):
+        visitor.visit_var(self)
+
     def __str__(self):
         return str(self.name)
 
@@ -109,6 +114,9 @@ class VarPlaceholder(Value):
     def __init__(self):
         super().__init__()
 
+    def accept(self, visitor):
+        raise ValueError("Cannot visit a var placeholder")
+
     def __str__(Self):
         return "<VarPlaceholder>"
 
@@ -116,6 +124,9 @@ class Negation(Value):
     def __init__(self, value: Value):
         super().__init__()
         self.value = _check_and_replace_value(value)
+
+    def accept(self, visitor: 'ValueVisitor'):
+        visitor.visit_negation(self)
 
     def __str__(self):
         return "-" + str(self.value)
@@ -132,6 +143,9 @@ class Sum(BinaryOp):
     def __init__(self, lhs: Value, rhs: Value):
         super().__init__(lhs, rhs)
 
+    def accept(self, visitor: 'ValueVisitor'):
+        visitor.visit_sum(self)
+
     def __str__(self):
         return f"{self.lhs} + {self.rhs}"
 
@@ -139,6 +153,9 @@ class Sum(BinaryOp):
 class Difference(BinaryOp):
     def __init__(self, lhs: Value, rhs: Value):
         super().__init__(lhs, rhs)
+
+    def accept(self, visitor: 'ValueVisitor'):
+        visitor.visit_difference(self)
 
     def __str__(self):
         return f"{self.lhs} - {self.rhs}"
@@ -148,6 +165,9 @@ class Product(BinaryOp):
     def __init__(self, lhs: Value, rhs: Value):
         super().__init__(lhs, rhs)
 
+    def accept(self, visitor: 'ValueVisitor'):
+        visitor.visit_product(self)
+
     def __str__(self):
         return f"({self.lhs}) * ({self.rhs})"
 
@@ -156,23 +176,23 @@ class Quotient(BinaryOp):
     def __init__(self, lhs: Value, rhs: Value):
         super().__init__(lhs, rhs)
 
-    def __str__(self):
-        return f"({self.lhs}) / ({self.rhs})"
-
-
-class Equality(BinaryOp):
-    def __init__(self, lhs: Value, rhs: Value):
-        super().__init__(lhs, rhs)
+    def accept(self, visitor: 'ValueVisitor'):
+        visitor.visit_quotient(self)
 
     def __str__(self):
         return f"({self.lhs}) / ({self.rhs})"
+
 
 ############################# Constraints #############################
 
 
-class Constraint:
+class Constraint(ABC):
     def __init__(self):
         super().__init__()
+
+    @abstractmethod
+    def accept(self, visitor: 'ConstraintVisitor'):
+        pass
 
     def __repr__(self):
         return str(self)
@@ -188,21 +208,19 @@ class Equal(BinaryPrimitiveConstraint):
     def __init__(self, lhs: 'Value', rhs: 'Value'):
         super().__init__(lhs, rhs)
 
+    def accept(self, visitor: 'ConstraintVisitor'):
+        visitor.visit_equal(self)
+
     def __str__(self):
         return str(self.lhs) + " == " + str(self.rhs)
-
-
-class Unequal(BinaryPrimitiveConstraint):
-    def __init__(self, lhs: 'Value', rhs: 'Value'):
-        super().__init__(lhs, rhs)
-
-    def __str__(self):
-        return str(self.lhs) + " != " + str(self.rhs)
 
 
 class LessThan(BinaryPrimitiveConstraint):
     def __init__(self, lhs: 'Value', rhs: 'Value'):
         super().__init__(lhs, rhs)
+
+    def accept(self, visitor: 'ConstraintVisitor'):
+        visitor.visit_less_than(self)
 
     def __str__(self):
         return str(self.lhs) + " < " + str(self.rhs)
@@ -212,6 +230,9 @@ class LessThanEqual(BinaryPrimitiveConstraint):
     def __init__(self, lhs: 'Value', rhs: 'Value'):
         super().__init__(lhs, rhs)
 
+    def accept(self, visitor: 'ConstraintVisitor'):
+        visitor.visit_less_than_equal(self)
+
     def __str__(self):
         return str(self.lhs) + " <= " + str(self.rhs)
 
@@ -220,6 +241,9 @@ class GreaterThan(BinaryPrimitiveConstraint):
     def __init__(self, lhs: 'Value', rhs: 'Value'):
         super().__init__(lhs, rhs)
 
+    def accept(self, visitor: 'ConstraintVisitor'):
+        visitor.visit_greater_than(self)
+
     def __str__(self):
         return str(self.lhs) + " > " + str(self.rhs)
 
@@ -227,6 +251,9 @@ class GreaterThan(BinaryPrimitiveConstraint):
 class GreaterThanEqual(BinaryPrimitiveConstraint):
     def __init__(self, lhs: 'Value', rhs: 'Value'):
         super().__init__(lhs, rhs)
+
+    def accept(self, visitor: 'ConstraintVisitor'):
+        visitor.visit_greater_than_equal(self)
 
     def __str__(self):
         return str(self.lhs) + " >= " + str(self.rhs)
@@ -247,10 +274,16 @@ class Min(FunctionConstraint):
     def __init__(self, lhs: 'Value', values: 'list[Value]'):
         super().__init__(lhs, values, "min")
 
+    def accept(self, visitor: 'ConstraintVisitor'):
+        visitor.visit_min(self)
+
 
 class Max(FunctionConstraint):
     def __init__(self, lhs: 'Value', values: 'list[Value]'):
         super().__init__(lhs, values, "max")
+
+    def accept(self, visitor: 'ConstraintVisitor'):
+        visitor.visit_max(self)
 
 ############################# Point #############################
 
@@ -289,3 +322,62 @@ class PointPlaceholder:
                 "This is a placeholder and can therefore not be used in a constraint. You can create a fresh point usint ast.point(<x>)")
         else:
             raise TypeError(f"Cannot compare to a type(other)")
+
+
+
+############################# Visitor #############################
+class ValueVisitor(ABC):
+    def dispatch(self, value):
+        if isinstance(value, numbers.Real):
+            self.visit_real(value)
+        elif isinstance(value, Value):
+            value.accept(self)
+        else:
+            raise TypeError(f"Unknown type {type(value)} for a value")
+
+    def visit_real(self, value: numbers.Real):
+        pass
+
+    def visit_var(self, value: Var):
+        pass
+
+    def visit_negation(self, value: Negation):
+        value.value.accept(self)
+
+    def visit_sum(self, value: Sum):
+        value.lhs.accept(self)
+        value.rhs.accept(self)
+
+    def visit_difference(self, value: Difference):
+        value.lhs.accept(self)
+        value.rhs.accept(self)
+
+    def visit_product(self, value: Product):
+        value.lhs.accept(self)
+        value.rhs.accept(self)
+
+    def visit_quotient(self, value: Quotient):
+        value.lhs.accept(self)
+        value.rhs.accept(self)
+
+class ConstraintVisitor(ABC):
+    def visit_equal(self, constraint: Equal):
+        pass
+
+    def visit_less_than(self, constraint: LessThan):
+        pass
+
+    def visit_greater_than(self, constraint: GreaterThan):
+        pass
+
+    def visit_less_than_equal(self, constraint: LessThanEqual):
+        pass
+
+    def visit_greater_than_equal(self, constraint: GreaterThanEqual):
+        pass
+
+    def visit_min(self, constraint: Min):
+        pass
+
+    def visit_max(self, constraint: Max):
+        pass
