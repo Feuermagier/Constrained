@@ -13,7 +13,7 @@ define("constrained", ["@jupyter-widgets/base"], function(widgets) {
         },
 
         svg_changed: function() {
-            this.el.innerHTML = this.model.get("svg");
+            this.el.innerHTML = "<div>" + this.model.get("loss") + "</div>" + this.model.get("svg");
         }
     });
 
@@ -30,3 +30,4 @@ class ConstrainedWidget(widgets.DOMWidget):
     _view_module = Unicode("constrained").tag(sync=True)
     _view_module_version = Unicode('0.1.0').tag(sync=True)
     svg = Unicode("").tag(sync=True)
+    loss = Unicode("").tag(sync=True)

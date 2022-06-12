@@ -25,18 +25,20 @@ def _gd_solve(canvas, renderer, config):
         from constrained.widget import ConstrainedWidget
         w = ConstrainedWidget()
         def callback(step, loss, solution):
-            if step % 100 == 0:
+            if step % 500 == 0:
                 renderer = SVGRenderer(canvas)
                 canvas.root._draw(solution, renderer)
+                w.loss = f"{loss:.3f}"
                 w.svg = renderer._repr_svg_()
         IPython.display.display(w)
     except Exception as e:
         print(e)
         callback = None
-    solution = solve_with_gradient_descent(canvas, step_callback=callback)
+    solution, loss = solve_with_gradient_descent(canvas, step_callback=callback)
     renderer = SVGRenderer(canvas)
     canvas.root._draw(solution, renderer)
 
     if callback is not None:
         IPython.display.clear_output(wait=True)
+    print(f"Final loss: {loss:.3f}")
     return renderer

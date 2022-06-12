@@ -57,7 +57,7 @@ def _constraint_to_loss(value: Union[Constraint, Value, Real]):
     else:
         raise TypeError(f"Unknown type {type(value)} for a constraint")
 
-def solve_with_gradient_descent(canvas, step_size=0.05, steps=10000, step_callback=None, delta=0.01, patience=50):
+def solve_with_gradient_descent(canvas, step_size=1, steps=100000, step_callback=None, delta=0.01, patience=50):
     constraints = []
     for constraint in canvas.root.constraints:
         if constraint is False:
@@ -66,6 +66,7 @@ def solve_with_gradient_descent(canvas, step_size=0.05, steps=10000, step_callba
             constraints.append(constraint)
 
     loss = sum([_constraint_to_loss(constraint) for constraint in constraints])
+    loss /= AutogradConstant(len(constraints))
 
     last_loss = float("inf")
     stop_counter = 0
@@ -84,10 +85,10 @@ def solve_with_gradient_descent(canvas, step_size=0.05, steps=10000, step_callba
             break
         last_loss = step_loss
 
-    return GradientDescentSolution()
+    return GradientDescentSolution(), step_loss
 
 def less_than_loss(lhs, rhs):
-    return maximum([lhs - rhs, 0])
+    return maximum([lhs - rhs, 0])**2
 
 def equals_loss(lhs, rhs):
     return (lhs - rhs)**2
